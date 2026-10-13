@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="app-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuraFlow | BCI & 10-20 EEG Neural Signal Decoder Workstation</title>
+    <!-- Font Awesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #06090e;
+            --bg-card: #0c121d;
+            --bg-card-hover: #131c2e;
+            --border-glow: #1e293b;
+            --border-accent: #0ea5e9;
+            --cyan: #38bdf8;
+            --neon-green: #10b981;
+            --magenta: #f43f5e;
+            --amber: #f59e0b;
+            --purple: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-ui: 'Tajawal', system-ui, sans-serif;
+        }
+
+        html[dir="ltr"] {
+            --font-ui: system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
+        }
+
+        /* Top Navigation Header */
+        header {
+            height: 60px;
+            background: rgba(12, 18, 29, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #0284c7, #8b5cf6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+        }
+
+        .brand-title {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #38bdf8, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-badge {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: var(--neon-green);
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .telemetry-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            font-family: var(--font-mono);
+        }
+
+        .telemetry-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+        }
+
+        .telemetry-item strong {
+            color: var(--text-main);
+        }
+
+        .action-btns {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            border-color: var(--border-accent);
+            background: var(--bg-card-hover);
+            color: #38bdf8;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.15);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: rgba(244, 63, 94, 0.3);
+            color: var(--magenta);
+        }
+
+        .btn-danger:hover {
+            background: rgba(244, 63, 94, 0.25);
+        }
+
+        /* Main Workspace Grid */
+        main {
+            flex: 1;
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            grid-template-rows: auto 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 1200px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Top Control Bar */
+        .control-strip {
+            grid-column: 1 / -1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glow);
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .toggle-btn.active {
+            background: rgba(14, 165, 233, 0.2);
+            border-color: var(--cyan);
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Left Main Panel: Multi-Channel Oscilloscope */
+        .oscilloscope-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .panel-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-glow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--cyan);
+        }
+
+        .canvas-wrap {
+            flex: 1;
+            position: relative;
+            min-height: 520px;
+            background: #030712;
+            cursor: crosshair;
+        }
+
+        #eeg-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Right Panel: Analytics, 3D Topomap, PSD */
+        .sidebar-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sub-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .topomap-container {
+            width: 100%;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #topomap-canvas {
+            width: 200px;
+            height: 200px;
+        }
+
+        /* Power Spectral Density Bars */
+        .psd-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .band-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+        }
+
+        .band-name {
+            width: 55px;
+            color: var(--text-muted);
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 20%;
+            border-radius: 4px;
+            transition: width 0.1s linear;
+        }
+
+        .band-val {
+            width: 38px;
+            text-align: right;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Cognitive State Classifiers */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .metric-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 4px;
+        }
+
+        .metric-label {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .metric-val {
+            font-size: 18px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+        }
+
+        /* Motor Imagery Box */
+        .intent-box {
+            background: rgba(14, 165, 233, 0.08);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .intent-title {
+            font-size: 10px;
+            color: var(--cyan);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .intent-state {
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Status Footer */
+        footer {
+            height: 32px;
+            background: #04070d;
+            border-top: 1px solid #111827;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand-section">
+            <div class="brand-logo"><i class="fa-solid fa-brain"></i></div>
+            <div>
+                <div class="brand-title">NeuraFlow BCI</div>
+                <div style="font-size: 10px; color: var(--text-muted);">Neural Signal Processing Workstation</div>
+            </div>
+            <span class="brand-badge" id="lbl-status">STREAMING @ 250Hz</span>
+        </div>
+
+        <div class="telemetry-row">
+            <div class="telemetry-item">
+                <i class="fa-solid fa-microchip" style="color: var(--cyan);"></i>
+                <span id="lbl-dsp">DSP:</span> <strong>Bandpass 0.5-50Hz</strong>
+            </div>
+            <div class="telemetry-item">
+                <i class="fa-solid fa-wave-square" style="color: var(--neon-green);"></i>
+                <span id="lbl-snr">SNR:</span> <strong>28.4 dB</strong>
+            </div>
+            <div class="telemetry-item">
+                <i class="fa-solid fa-bolt" style="color: var(--amber);"></i>
+                <span id="lbl-impedance">Impedance:</span> <strong>&lt; 5 kΩ</strong>
+            </div>
+        </div>
+
+        <div class="action-btns">
+            <button class="btn" onclick="toggleLanguage()"><i class="fa-solid fa-globe"></i> <span id="btn-lang">English</span></button>
+            <button class="btn" onclick="injectEyeBlink()"><i class="fa-solid fa-eye"></i> <span id="btn-blink">حقن رمشة عين</span></button>
+            <button class="btn btn-primary" id="btn-stream" onclick="toggleStream()"><i class="fa-solid fa-pause"></i> <span id="btn-stream-text">إيقاف مؤقت</span></button>
+            <button class="btn" onclick="window.location.href='https://tareq0001.github.io/'"><i class="fa-solid fa-arrow-left"></i> <span id="btn-portfolio">ملف الأعمال</span></button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main>
+        <!-- Top Filter Bar -->
+        <div class="control-strip">
+            <div class="toggle-group">
+                <span style="font-size: 11px; color: var(--text-muted); font-weight: bold;" id="lbl-filters">مرشحات DSP:</span>
+                <button class="toggle-btn active" id="btn-notch" onclick="toggleFilter('notch')">Notch 50Hz (شبكة الكهرباء)</button>
+                <button class="toggle-btn active" id="btn-bp" onclick="toggleFilter('bp')">Bandpass (0.5 - 50Hz)</button>
+                <button class="toggle-btn active" id="btn-artifact" onclick="toggleFilter('artifact')">إزالة التشويش الحركي (Artifact Rejection)</button>
+            </div>
+
+            <div class="toggle-group">
+                <span style="font-size: 11px; color: var(--text-muted); font-weight: bold;" id="lbl-mode">المحاكاة العقلية:</span>
+                <button class="toggle-btn active" id="mode-rest" onclick="setMentalMode('rest')">استرخاء (Alpha)</button>
+                <button class="toggle-btn" id="mode-focus" onclick="setMentalMode('focus')">تركيز عالي (Beta)</button>
+                <button class="toggle-btn" id="mode-motor" onclick="setMentalMode('motor')">نية حركية (Motor Imagery)</button>
+                <button class="toggle-btn" id="mode-drowsy" onclick="setMentalMode('drowsy')">نعاس (Theta/Delta)</button>
+            </div>
+        </div>
+
+        <!-- Left: 16-Channel Oscilloscope -->
+        <div class="oscilloscope-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span id="title-scope">مخطط الإشارات العصبية متعدد القنوات (16-Ch 10-20 Standard Montage)</span>
+                </div>
+                <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
+                    Timebase: <strong>250mm/s</strong> | Gain: <strong>10µV/div</strong>
+                </div>
+            </div>
+            <div class="canvas-wrap">
+                <canvas id="eeg-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Right: Topomap & Cognitive Analytics -->
+        <div class="sidebar-panel">
+            <!-- 3D Topographic Scalp Map -->
+            <div class="sub-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-head-side-virus"></i>
+                    <span id="title-topomap">الخريطة الطوبوغرافية لفروة الرأس (Topomap)</span>
+                </div>
+                <div class="topomap-container">
+                    <canvas id="topomap-canvas" width="200" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Frequency Bands (PSD) -->
+            <div class="sub-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-bars-progress"></i>
+                    <span id="title-psd">توزيع أطياف فورييه (Power Spectral Density)</span>
+                </div>
+                <div class="psd-row">
+                    <div class="band-bar-item">
+                        <span class="band-name">دلتا (δ)</span>
+                        <div class="bar-track"><div class="bar-fill" id="bar-delta" style="background: #3b82f6;"></div></div>
+                        <span class="band-val" id="val-delta">14%</span>
+                    </div>
+                    <div class="band-bar-item">
+                        <span class="band-name">ثيتا (θ)</span>
+                        <div class="bar-track"><div class="bar-fill" id="bar-theta" style="background: #06b6d4;"></div></div>
+                        <span class="band-val" id="val-theta">18%</span>
+                    </div>
+                    <div class="band-bar-item">
+                        <span class="band-name">ألفا (α)</span>
+                        <div class="bar-track"><div class="bar-fill" id="bar-alpha" style="background: #10b981;"></div></div>
+                        <span class="band-val" id="val-alpha">42%</span>
+                    </div>
+                    <div class="band-bar-item">
+                        <span class="band-name">بيتا (β)</span>
+                        <div class="bar-track"><div class="bar-fill" id="bar-beta" style="background: #f59e0b;"></div></div>
+                        <span class="band-val" id="val-beta">20%</span>
+                    </div>
+                    <div class="band-bar-item">
+                        <span class="band-name">جاما (γ)</span>
+                        <div class="bar-track"><div class="bar-fill" id="bar-gamma" style="background: #ec4899;"></div></div>
+                        <span class="band-val" id="val-gamma">6%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cognitive State Classifiers -->
+            <div class="sub-card">
+                <div class="panel-title">
+                    <i class="fa-solid fa-brain"></i>
+                    <span id="title-metrics">مؤشرات الحالات المعرفية (Cognitive States)</span>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <span class="metric-label" id="lbl-focus">مؤشر التركيز (Focus)</span>
+                        <span class="metric-val" id="val-focus" style="color: var(--cyan);">78%</span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label" id="lbl-fatigue">الإجهاد العقلي (Fatigue)</span>
+                        <span class="metric-val" id="val-fatigue" style="color: var(--amber);">24%</span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label" id="lbl-drowsy">مستوى النعاس (Drowsiness)</span>
+                        <span class="metric-val" id="val-drowsy" style="color: var(--neon-green);">12%</span>
+                    </div>
+                    <div class="metric-box">
+                        <span class="metric-label" id="lbl-engagement">التفاعل الذهني (Engagement)</span>
+                        <span class="metric-val" id="val-engagement" style="color: var(--magenta);">0.85</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motor Imagery Intent -->
+            <div class="intent-box">
+                <div class="intent-title" id="lbl-intent-title">تصنيف النية الحركية (Motor Imagery AI)</div>
+                <div class="intent-state" id="intent-val">
+                    <i class="fa-solid fa-hand"></i>
+                    <span id="intent-text">حالة سكون (Rest State)</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div>NEURAFLOW v2.4 PRO • 10-20 INTERNATIONAL ELECTRODE SYSTEM • DSP KERNEL RUNNING</div>
+        <div>DEVELOPED BY: TAREQ ABOUSHI • SAUDI ARABIA 🇸🇦</div>
+    </footer>
+
+    <!-- Core Neural DSP & Canvas Simulation -->
+    <script>
+        const CHANNELS = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'F7', 'F8', 'T3', 'T4', 'T5', 'T6'];
+        const ELECTRODE_POSITIONS = {
+            'Fp1': { x: 80, y: 35 }, 'Fp2': { x: 120, y: 35 },
+            'F7': { x: 45, y: 65 }, 'F3': { x: 75, y: 70 }, 'F4': { x: 125, y: 70 }, 'F8': { x: 155, y: 65 },
+            'T3': { x: 35, y: 100 }, 'C3': { x: 70, y: 100 }, 'C4': { x: 130, y: 100 }, 'T4': { x: 165, y: 100 },
+            'T5': { x: 45, y: 135 }, 'P3': { x: 75, y: 130 }, 'P4': { x: 125, y: 130 }, 'T6': { x: 155, y: 135 },
+            'O1': { x: 80, y: 165 }, 'O2': { x: 120, y: 165 }
+        };
+
+        let isStreaming = true;
+        let notchEnabled = true;
+        let bpEnabled = true;
+        let artifactRejectionEnabled = true;
+        let currentMode = 'rest';
+        let currentLang = 'ar';
+
+        const bufferLength = 600;
+        const channelBuffers = {};
+        CHANNELS.forEach(ch => channelBuffers[ch] = new Float32Array(bufferLength).fill(0));
+
+        let t = 0;
+        let eyeBlinkIntensity = 0;
+
+        // Initialize Canvas
+        const eegCanvas = document.getElementById('eeg-canvas');
+        const eegCtx = eegCanvas.getContext('2d');
+        const topoCanvas = document.getElementById('topomap-canvas');
+        const topoCtx = topoCanvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = eegCanvas.parentElement.getBoundingClientRect();
+            eegCanvas.width = rect.width * window.devicePixelRatio;
+            eegCanvas.height = rect.height * window.devicePixelRatio;
+            eegCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // DSP Simulation Frame Loop
+        function generateSignal(ch, step) {
+            let base = 0;
+            // 1. Pink Noise baseline
+            base += (Math.random() - 0.5) * 4;
+
+            // 2. Frequency contributions by mental mode
+            if (currentMode === 'rest') {
+                // High Alpha in occipital
+                if (ch === 'O1' || ch === 'O2' || ch === 'P3' || ch === 'P4') {
+                    base += Math.sin(step * 0.1) * 18; // Alpha ~ 10Hz
+                } else {
+                    base += Math.sin(step * 0.1) * 6;
+                }
+            } else if (currentMode === 'focus') {
+                // High Beta in Frontal/Central
+                base += Math.sin(step * 0.22) * 14; // Beta ~ 22Hz
+                base += Math.sin(step * 0.38) * 6;  // Gamma ~ 38Hz
+            } else if (currentMode === 'motor') {
+                // Sensorimotor ERD/ERS in C3, C4
+                if (ch === 'C3') base += Math.sin(step * 0.12) * 3; // Desynchronized
+                if (ch === 'C4') base += Math.sin(step * 0.12) * 16; // Right active
+            } else if (currentMode === 'drowsy') {
+                // High Theta and Delta
+                base += Math.sin(step * 0.05) * 18; // Theta
+                base += Math.sin(step * 0.02) * 22; // Delta
+            }
+
+            // 3. Eye blink artifact (Fp1, Fp2)
+            if (eyeBlinkIntensity > 0 && (ch === 'Fp1' || ch === 'Fp2')) {
+                base += eyeBlinkIntensity;
+            }
+
+            // DSP Filters Simulation
+            if (!notchEnabled) {
+                base += Math.sin(step * 0.5) * 12; // 50Hz hum
+            }
+            if (!bpEnabled) {
+                base += Math.sin(step * 0.005) * 30; // DC baseline drift
+            }
+
+            return base;
+        }
+
+        function updateSignals() {
+            if (!isStreaming) return;
+            t++;
+            if (eyeBlinkIntensity > 0) eyeBlinkIntensity *= 0.88;
+            if (eyeBlinkIntensity < 0.5) eyeBlinkIntensity = 0;
+
+            CHANNELS.forEach(ch => {
+                const buf = channelBuffers[ch];
+                for (let i = 0; i < buf.length - 1; i++) {
+                    buf[i] = buf[i + 1];
+                }
+                buf[buf.length - 1] = generateSignal(ch, t);
+            });
+        }
+
+        function drawEEG() {
+            const rect = eegCanvas.parentElement.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+
+            eegCtx.clearRect(0, 0, width, height);
+
+            // Draw grid
+            eegCtx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+            eegCtx.lineWidth = 1;
+            const stepY = height / CHANNELS.length;
+
+            for (let i = 0; i < CHANNELS.length; i++) {
+                const y = i * stepY;
+                eegCtx.beginPath();
+                eegCtx.moveTo(0, y);
+                eegCtx.lineTo(width, y);
+                eegCtx.stroke();
+            }
+
+            // Draw Channels Traces
+            CHANNELS.forEach((ch, idx) => {
+                const centerY = idx * stepY + stepY / 2;
+                const buf = channelBuffers[ch];
+
+                // Draw Channel Label
+                eegCtx.fillStyle = '#94a3b8';
+                eegCtx.font = 'bold 11px JetBrains Mono';
+                eegCtx.fillText(ch, 12, centerY - 4);
+
+                // Trace path
+                eegCtx.beginPath();
+                eegCtx.lineWidth = 1.4;
+                eegCtx.strokeStyle = idx % 2 === 0 ? '#38bdf8' : '#10b981';
+
+                const dx = width / buf.length;
+                for (let i = 0; i < buf.length; i++) {
+                    const x = i * dx;
+                    const y = centerY - buf[i];
+                    if (i === 0) eegCtx.moveTo(x, y);
+                    else eegCtx.lineTo(x, y);
+                }
+                eegCtx.stroke();
+            });
+        }
+
+        function drawTopomap() {
+            topoCtx.clearRect(0, 0, 200, 200);
+
+            // Draw Head circle & nose
+            topoCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+            topoCtx.lineWidth = 2;
+            topoCtx.beginPath();
+            topoCtx.arc(100, 100, 75, 0, Math.PI * 2);
+            topoCtx.stroke();
+
+            // Nose
+            topoCtx.beginPath();
+            topoCtx.moveTo(92, 25);
+            topoCtx.lineTo(100, 12);
+            topoCtx.lineTo(108, 25);
+            topoCtx.stroke();
+
+            // Ears
+            topoCtx.beginPath();
+            topoCtx.arc(23, 100, 8, -Math.PI / 2, Math.PI / 2);
+            topoCtx.stroke();
+            topoCtx.beginPath();
+            topoCtx.arc(177, 100, 8, Math.PI / 2, -Math.PI / 2);
+            topoCtx.stroke();
+
+            // Draw Electrodes and voltage rings
+            CHANNELS.forEach(ch => {
+                const pos = ELECTRODE_POSITIONS[ch];
+                const val = channelBuffers[ch][channelBuffers[ch].length - 1];
+
+                // Voltage Glow
+                const grad = topoCtx.createRadialGradient(pos.x, pos.y, 2, pos.x, pos.y, 18);
+                if (val > 5) {
+                    grad.addColorStop(0, 'rgba(244, 63, 94, 0.7)');
+                    grad.addColorStop(1, 'transparent');
+                } else if (val < -5) {
+                    grad.addColorStop(0, 'rgba(14, 165, 233, 0.7)');
+                    grad.addColorStop(1, 'transparent');
+                } else {
+                    grad.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+                    grad.addColorStop(1, 'transparent');
+                }
+                topoCtx.fillStyle = grad;
+                topoCtx.beginPath();
+                topoCtx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
+                topoCtx.fill();
+
+                // Electrode dot
+                topoCtx.fillStyle = '#ffffff';
+                topoCtx.beginPath();
+                topoCtx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
+                topoCtx.fill();
+            });
+        }
+
+        function updateAnalytics() {
+            if (currentMode === 'rest') {
+                document.getElementById('val-delta').innerText = '12%'; document.getElementById('bar-delta').style.width = '12%';
+                document.getElementById('val-theta').innerText = '16%'; document.getElementById('bar-theta').style.width = '16%';
+                document.getElementById('val-alpha').innerText = '52%'; document.getElementById('bar-alpha').style.width = '52%';
+                document.getElementById('val-beta').innerText = '14%'; document.getElementById('bar-beta').style.width = '14%';
+                document.getElementById('val-gamma').innerText = '6%'; document.getElementById('bar-gamma').style.width = '6%';
+
+                document.getElementById('val-focus').innerText = '48%';
+                document.getElementById('val-fatigue').innerText = '18%';
+                document.getElementById('val-drowsy').innerText = '14%';
+                document.getElementById('val-engagement').innerText = '0.55';
+                document.getElementById('intent-text').innerText = currentLang === 'ar' ? 'سكون / استرخاء' : 'Rest State';
+            } else if (currentMode === 'focus') {
+                document.getElementById('val-delta').innerText = '8%'; document.getElementById('bar-delta').style.width = '8%';
+                document.getElementById('val-theta').innerText = '10%'; document.getElementById('bar-theta').style.width = '10%';
+                document.getElementById('val-alpha').innerText = '18%'; document.getElementById('bar-alpha').style.width = '18%';
+                document.getElementById('val-beta').innerText = '48%'; document.getElementById('bar-beta').style.width = '48%';
+                document.getElementById('val-gamma').innerText = '16%'; document.getElementById('bar-gamma').style.width = '16%';
+
+                document.getElementById('val-focus').innerText = '94%';
+                document.getElementById('val-fatigue').innerText = '32%';
+                document.getElementById('val-drowsy').innerText = '4%';
+                document.getElementById('val-engagement').innerText = '0.92';
+                document.getElementById('intent-text').innerText = currentLang === 'ar' ? 'معالجة معرفية عليا' : 'High Cognitive Flow';
+            } else if (currentMode === 'motor') {
+                document.getElementById('val-delta').innerText = '10%'; document.getElementById('bar-delta').style.width = '10%';
+                document.getElementById('val-theta').innerText = '14%'; document.getElementById('bar-theta').style.width = '14%';
+                document.getElementById('val-alpha').innerText = '25%'; document.getElementById('bar-alpha').style.width = '25%';
+                document.getElementById('val-beta').innerText = '41%'; document.getElementById('bar-beta').style.width = '41%';
+                document.getElementById('val-gamma').innerText = '10%'; document.getElementById('bar-gamma').style.width = '10%';
+
+                document.getElementById('val-focus').innerText = '82%';
+                document.getElementById('val-fatigue').innerText = '22%';
+                document.getElementById('val-drowsy').innerText = '8%';
+                document.getElementById('val-engagement').innerText = '0.86';
+                document.getElementById('intent-text').innerText = currentLang === 'ar' ? 'حركة اليد اليمنى (C4 Act)' : 'Right Hand Imagery (C4 Act)';
+            } else if (currentMode === 'drowsy') {
+                document.getElementById('val-delta').innerText = '44%'; document.getElementById('bar-delta').style.width = '44%';
+                document.getElementById('val-theta').innerText = '34%'; document.getElementById('bar-theta').style.width = '34%';
+                document.getElementById('val-alpha').innerText = '12%'; document.getElementById('bar-alpha').style.width = '12%';
+                document.getElementById('val-beta').innerText = '8%'; document.getElementById('bar-beta').style.width = '8%';
+                document.getElementById('val-gamma').innerText = '2%'; document.getElementById('bar-gamma').style.width = '2%';
+
+                document.getElementById('val-focus').innerText = '18%';
+                document.getElementById('val-fatigue').innerText = '86%';
+                document.getElementById('val-drowsy').innerText = '91%';
+                document.getElementById('val-engagement').innerText = '0.21';
+                document.getElementById('intent-text').innerText = currentLang === 'ar' ? 'نعاس وإرهاق دماغي' : 'Deep Drowsiness Warning';
+            }
+        }
+
+        // Animation Loop
+        function loop() {
+            updateSignals();
+            drawEEG();
+            drawTopomap();
+            requestAnimationFrame(loop);
+        }
+        setInterval(updateAnalytics, 300);
+        loop();
+
+        // Control Functions
+        function toggleStream() {
+            isStreaming = !isStreaming;
+            const btn = document.getElementById('btn-stream');
+            const lbl = document.getElementById('lbl-status');
+            if (isStreaming) {
+                btn.innerHTML = '<i class="fa-solid fa-pause"></i> <span id="btn-stream-text">' + (currentLang === 'ar' ? 'إيقاف مؤقت' : 'Pause Stream') + '</span>';
+                btn.classList.add('btn-primary');
+                lbl.innerText = 'STREAMING @ 250Hz';
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> <span id="btn-stream-text">' + (currentLang === 'ar' ? 'استئناف البث' : 'Resume Stream') + '</span>';
+                btn.classList.remove('btn-primary');
+                lbl.innerText = 'PAUSED';
+            }
+        }
+
+        function toggleFilter(f) {
+            if (f === 'notch') {
+                notchEnabled = !notchEnabled;
+                document.getElementById('btn-notch').classList.toggle('active', notchEnabled);
+            } else if (f === 'bp') {
+                bpEnabled = !bpEnabled;
+                document.getElementById('btn-bp').classList.toggle('active', bpEnabled);
+            } else if (f === 'artifact') {
+                artifactRejectionEnabled = !artifactRejectionEnabled;
+                document.getElementById('btn-artifact').classList.toggle('active', artifactRejectionEnabled);
+            }
+        }
+
+        function setMentalMode(m) {
+            currentMode = m;
+            document.querySelectorAll('.control-strip .toggle-btn').forEach(b => {
+                if (b.id.startsWith('mode-')) b.classList.remove('active');
+            });
+            document.getElementById('mode-' + m).classList.add('active');
+            updateAnalytics();
+        }
+
+        function injectEyeBlink() {
+            eyeBlinkIntensity = 65;
+        }
+
+        // Internationalization
+        const dict = {
+            ar: {
+                btn_lang: "English",
+                btn_blink: "حقن رمشة عين",
+                btn_pause: "إيقاف مؤقت",
+                btn_resume: "استئناف البث",
+                btn_portfolio: "ملف الأعمال",
+                lbl_filters: "مرشحات DSP:",
+                lbl_mode: "المحاكاة العقلية:",
+                mode_rest: "استرخاء (Alpha)",
+                mode_focus: "تركيز عالي (Beta)",
+                mode_motor: "نية حركية (Motor Imagery)",
+                mode_drowsy: "نعاس (Theta/Delta)",
+                title_scope: "مخطط الإشارات العصبية متعدد القنوات (16-Ch 10-20 Standard Montage)",
+                title_topomap: "الخريطة الطوبوغرافية لفروة الرأس (Topomap)",
+                title_psd: "توزيع أطياف فورييه (Power Spectral Density)",
+                title_metrics: "مؤشرات الحالات المعرفية (Cognitive States)",
+                lbl_focus: "مؤشر التركيز (Focus)",
+                lbl_fatigue: "الإجهاد العقلي (Fatigue)",
+                lbl_drowsy: "مستوى النعاس (Drowsiness)",
+                lbl_engagement: "التفاعل الذهني (Engagement)",
+                lbl_intent_title: "تصنيف النية الحركية (Motor Imagery AI)"
+            },
+            en: {
+                btn_lang: "العربية",
+                btn_blink: "Inject Eye Blink",
+                btn_pause: "Pause Stream",
+                btn_resume: "Resume Stream",
+                btn_portfolio: "Main Portfolio",
+                lbl_filters: "DSP Filters:",
+                lbl_mode: "Mental Mode Simulation:",
+                mode_rest: "Relaxed (Alpha)",
+                mode_focus: "High Focus (Beta)",
+                mode_motor: "Motor Imagery (C3/C4)",
+                mode_drowsy: "Drowsy (Theta/Delta)",
+                title_scope: "Multi-Channel EEG Oscilloscope (16-Ch 10-20 Standard Montage)",
+                title_topomap: "3D Scalp Topographic Potential Map (Topomap)",
+                title_psd: "Power Spectral Density Decomposition (FFT Bands)",
+                title_metrics: "Cognitive State Index & Telemetry",
+                lbl_focus: "Focus / Attention Index",
+                lbl_fatigue: "Mental Fatigue",
+                lbl_drowsy: "Drowsiness Warning",
+                lbl_engagement: "Mental Engagement",
+                lbl_intent_title: "Motor Imagery Classifier (AI BCI)"
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            const root = document.getElementById('app-root');
+            root.setAttribute('lang', currentLang);
+            root.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+
+            const d = dict[currentLang];
+            document.getElementById('btn-lang').innerText = d.btn_lang;
+            document.getElementById('btn-blink').innerText = d.btn_blink;
+            document.getElementById('btn-portfolio').innerText = d.btn_portfolio;
+            document.getElementById('lbl-filters').innerText = d.lbl_filters;
+            document.getElementById('lbl-mode').innerText = d.lbl_mode;
+            document.getElementById('mode-rest').innerText = d.mode_rest;
+            document.getElementById('mode-focus').innerText = d.mode_focus;
+            document.getElementById('mode-motor').innerText = d.mode_motor;
+            document.getElementById('mode-drowsy').innerText = d.mode_drowsy;
+            document.getElementById('title-scope').innerText = d.title_scope;
+            document.getElementById('title-topomap').innerText = d.title_topomap;
+            document.getElementById('title-psd').innerText = d.title_psd;
+            document.getElementById('title-metrics').innerText = d.title_metrics;
+            document.getElementById('lbl-focus').innerText = d.lbl_focus;
+            document.getElementById('lbl-fatigue').innerText = d.lbl_fatigue;
+            document.getElementById('lbl-drowsy').innerText = d.lbl_drowsy;
+            document.getElementById('lbl-engagement').innerText = d.lbl_engagement;
+            document.getElementById('lbl-intent-title').innerText = d.lbl_intent_title;
+            updateAnalytics();
+        }
+    </script>
+</body>
+</html>
